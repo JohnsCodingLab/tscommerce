@@ -1,7 +1,23 @@
 import app from "./app.js";
+import connectDB from "./config/database.js";
+import { env } from "./config/env.js";
 
-const PORT = process.env.PORT || 5000;
+const startServer = async (): Promise<void> => {
+  try {
+    await connectDB();
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+    const server = app.listen(env.PORT, () => {
+      console.log(`🚀 Server running on port ${env.PORT}`);
+    });
+
+    server.on("error", (error) => {
+      console.error("❌ Server error:", error);
+      process.exit(1);
+    });
+  } catch (error) {
+    console.error("❌ Startup failed:", error);
+    process.exit(1);
+  }
+};
+
+startServer();
