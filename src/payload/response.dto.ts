@@ -14,3 +14,7 @@ export interface AuthResponseDTO {
   user: AuthUserResponseDTO;
   accessToken: string;
 }
+
+export interface RefreshResponseDTO {
+  accessToken: String;
+}
