@@ -6,6 +6,7 @@ import { REFRESH_TOKEN_TTL_DAYS } from "../constants/index.js";
 import { RefreshToken } from "../models/refresh-token.model.js";
 import { AppError } from "../utils/AppError.js";
 import type { UserRole } from "../types/index.js";
+import { logger } from "../utils/Logger.js";
 
 interface TokenMetadata {
   ipAddress?: string;
@@ -53,7 +54,7 @@ export class TokenService {
       ...metadata,
     });
 
-    // logger.debug(`Refresh token saved for user: ${userId}`)
+    logger.debug(`Refresh token saved for user: ${userId}`);
   }
 
   // Verify Access Token
@@ -64,7 +65,7 @@ export class TokenService {
         role: UserRole;
       };
     } catch (error) {
-      //   logger.error("Access token verification failed", error);
+      logger.error("Access token verification failed", error);
       throw AppError.unauthorized("Invalid or expired access token");
     }
   }
@@ -98,7 +99,7 @@ export class TokenService {
       return payload;
     } catch (error) {
       if (error instanceof AppError) throw error;
-      //   logger.error("Refresh token verification failed", error);
+      logger.error("Refresh token verification failed", error);
       throw AppError.unauthorized("Invalid or expired refresh token");
     }
   }
@@ -106,13 +107,13 @@ export class TokenService {
   // Revoke Refresh Token
   static async revokeRefreshToken(jti: string) {
     await RefreshToken.deleteOne({ jti });
-    // logger.debug(`Refresh token revoked: ${jti}`);
+    logger.debug(`Refresh token revoked: ${jti}`);
   }
 
   // Revoke All User Tokens
   static async revokeAllUserTokens(userId: string) {
     await RefreshToken.deleteMany({ user: userId });
-    // logger.info(`All refresh tokens revoked for user: ${userId}`);
+    logger.info(`All refresh tokens revoked for user: ${userId}`);
   }
 
   // Cleanup Expired Tokens (can be run as a cron job)
@@ -120,6 +121,6 @@ export class TokenService {
     const result = await RefreshToken.deleteMany({
       expiresAt: { $lt: new Date() },
     });
-    // logger.info(`Cleaned up ${result.deletedCount} expired tokens`);
+    logger.info(`Cleaned up ${result.deletedCount} expired tokens`);
   }
 }

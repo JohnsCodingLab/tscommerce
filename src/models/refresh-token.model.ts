@@ -21,7 +21,6 @@ const refreshTokenSchema = new Schema(
     expiresAt: {
       type: Date,
       required: true,
-      expires: 0,
       index: true,
     },
     ipAddress: {
