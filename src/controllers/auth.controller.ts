@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { asyncHandler } from "../middlewares/common/asyncHandler.js";
 import type { RegisterUserDTO } from "../payload/request.dto.js";
-import { registerUser } from "./auth.service.js";
+import { registerUser } from "../services/auth.service.js";
 
 export const register = asyncHandler(
   async (req: Request<{}, {}, RegisterUserDTO>, res: Response) => {

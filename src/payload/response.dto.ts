@@ -1,8 +1,8 @@
 /* ----------- Responses ----------- */
 
-import type { UserRole } from "../types/user.js";
+import type { UserRole } from "../types/index.js";
 
-export interface AuthUserResponseDTO {
+export interface UserResponseDTO {
   _id: string;
   firstName: string;
   lastName: string;
@@ -11,10 +11,17 @@ export interface AuthUserResponseDTO {
 }
 
 export interface AuthResponseDTO {
-  user: AuthUserResponseDTO;
+  user: UserResponseDTO;
+  token: {
+    accessToken: string;
+    refreshToken: string;
+  };
+}
+
+export interface TokenResponseDTO {
   accessToken: string;
 }
 
 export interface RefreshResponseDTO {
-  accessToken: String;
+  accessToken: string;
 }

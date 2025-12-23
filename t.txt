@@ -1,0 +1,1004 @@
+# Enterprise E-commerce Authentication System - Professional Refactor
+
+## Project Structure (Complete)
+
+```
+ecommerce-api/
+â”œâ”€â”€ src/
+â”‚   â”œâ”€â”€ config/
+â”‚   â”‚   â”œâ”€â”€ database.ts
+â”‚   â”‚   â”œâ”€â”€ env.ts
+â”‚   â”‚   â””â”€â”€ redis.ts (NEW)
+â”‚   â”œâ”€â”€ constants/
+â”‚   â”‚   â””â”€â”€ index.ts (NEW)
+â”‚   â”œâ”€â”€ controllers/
+â”‚   â”‚   â”œâ”€â”€ auth.controller.ts
+â”‚   â”‚   â””â”€â”€ user.controller.ts (NEW)
+â”‚   â”œâ”€â”€ middleware/
+â”‚   â”‚   â”œâ”€â”€ auth.middleware.ts (NEW)
+â”‚   â”‚   â”œâ”€â”€ validation.middleware.ts (NEW)
+â”‚   â”‚   â”œâ”€â”€ rateLimiter.middleware.ts (NEW)
+â”‚   â”‚   â””â”€â”€ errorHandler.middleware.ts
+â”‚   â”œâ”€â”€ models/
+â”‚   â”‚   â”œâ”€â”€ user.model.ts
+â”‚   â”‚   â””â”€â”€ refreshToken.model.ts
+â”‚   â”œâ”€â”€ routes/
+â”‚   â”‚   â”œâ”€â”€ index.ts (NEW)
+â”‚   â”‚   â”œâ”€â”€ auth.routes.ts
+â”‚   â”‚   â””â”€â”€ user.routes.ts (NEW)
+â”‚   â”œâ”€â”€ services/
+â”‚   â”‚   â”œâ”€â”€ auth.service.ts
+â”‚   â”‚   â”œâ”€â”€ token.service.ts (NEW)
+â”‚   â”‚   â”œâ”€â”€ user.service.ts (NEW)
+â”‚   â”‚   â””â”€â”€ email.service.ts (NEW)
+â”‚   â”œâ”€â”€ types/
+â”‚   â”‚   â”œâ”€â”€ index.ts
+â”‚   â”‚   â”œâ”€â”€ express.d.ts (NEW)
+â”‚   â”‚   â””â”€â”€ dtos.ts (NEW)
+â”‚   â”œâ”€â”€ utils/
+â”‚   â”‚   â”œâ”€â”€ AppError.ts
+â”‚   â”‚   â”œâ”€â”€ asyncHandler.ts
+â”‚   â”‚   â”œâ”€â”€ logger.ts (NEW)
+â”‚   â”‚   â””â”€â”€ validators.ts (NEW)
+â”‚   â”œâ”€â”€ validators/
+â”‚   â”‚   â””â”€â”€ auth.validator.ts (NEW)
+â”‚   â”œâ”€â”€ app.ts
+â”‚   â””â”€â”€ server.ts
+â”œâ”€â”€ .env
+â”œâ”€â”€ .env.example
+â”œâ”€â”€ .gitignore
+â”œâ”€â”€ package.json
+â””â”€â”€ tsconfig.json
+```
+
+---
+
+## 1. Enhanced Configuration Files
+
+### src/config/env.ts (FIXED)
+```typescript
+import dotenv from "dotenv";
+import { z } from "zod";
+import path from "path";
+
+dotenv.config({ path: path.join(process.cwd(), ".env") });
+
+const envSchema = z.object({
+  // Server
+  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+  PORT: z.coerce.number().default(3000),
+  
+  // Database
+  MONGO_URI: z.string().min(1, "MONGO_URI is required"),
+  
+  // JWT
+  JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
+  JWT_REFRESH_SECRET: z.string().min(32, "JWT_REFRESH_SECRET must be at least 32 characters"),
+  JWT_ACCESS_EXPIRATION: z.string().default("15m"),
+  JWT_REFRESH_EXPIRATION: z.string().default("7d"),
+  
+  // Redis (Optional for token blacklisting & caching)
+  REDIS_URL: z.string().optional(),
+  
+  // CORS
+  CORS_ORIGIN: z.string().default("http://localhost:5173"),
+  
+  // Email (for future email verification)
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().optional(),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  EMAIL_FROM: z.string().optional(),
+  
+  // Stripe (for future payment integration)
+  STRIPE_SECRET_KEY: z.string().optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().optional(),
+});
+
+const parsedEnv = envSchema.safeParse(process.env);
+
+if (!parsedEnv.success) {
+  console.error("âŒ Invalid environment variables:");
+  console.error(JSON.stringify(parsedEnv.error.format(), null, 2));
+  process.exit(1);
+}
+
+export const env = parsedEnv.data;
+
+export const isDevelopment = env.NODE_ENV === "development";
+export const isProduction = env.NODE_ENV === "production";
+export const isTest = env.NODE_ENV === "test";
+```
+
+### .env.example
+```env
+# Server Configuration
+NODE_ENV=development
+PORT=3000
+
+# Database
+MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/ecommerce?retryWrites=true&w=majority
+
+# JWT Secrets (Generate with: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))")
+JWT_SECRET=your_super_long_secret_key_at_least_32_characters_long_here
+JWT_REFRESH_SECRET=your_super_long_refresh_secret_key_at_least_32_characters
+JWT_ACCESS_EXPIRATION=15m
+JWT_REFRESH_EXPIRATION=7d
+
+# Redis (Optional - for token blacklisting and caching)
+REDIS_URL=redis://localhost:6379
+
+# CORS
+CORS_ORIGIN=http://localhost:5173,http://localhost:3000
+
+# Email Configuration (Optional)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+EMAIL_FROM=noreply@yourapp.com
+
+# Stripe (Optional)
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+```
+
+### src/config/redis.ts (NEW - Optional but recommended)
+```typescript
+import { createClient } from "redis";
+import { env } from "./env.js";
+import { logger } from "../utils/logger.js";
+
+let redisClient: ReturnType<typeof createClient> | null = null;
+
+export const connectRedis = async () => {
+  if (!env.REDIS_URL) {
+    logger.warn("Redis URL not provided. Token blacklisting will be disabled.");
+    return null;
+  }
+
+  try {
+    redisClient = createClient({ url: env.REDIS_URL });
+
+    redisClient.on("error", (err) => logger.error("Redis Client Error", err));
+    redisClient.on("connect", () => logger.info("Redis connected"));
+
+    await redisClient.connect();
+    return redisClient;
+  } catch (error) {
+    logger.error("Redis connection failed:", error);
+    return null;
+  }
+};
+
+export const getRedisClient = () => redisClient;
+```
+
+---
+
+## 2. Constants & Types
+
+### src/constants/index.ts (NEW)
+```typescript
+export const TOKEN_TYPES = {
+  ACCESS: "access",
+  REFRESH: "refresh",
+  EMAIL_VERIFICATION: "email_verification",
+  PASSWORD_RESET: "password_reset",
+} as const;
+
+export const REFRESH_TOKEN_TTL_DAYS = 7;
+export const ACCESS_TOKEN_TTL_MINUTES = 15;
+
+export const RATE_LIMIT = {
+  WINDOW_MS: 15 * 60 * 1000, // 15 minutes
+  MAX_REQUESTS: 100,
+};
+
+export const CACHE_TTL = {
+  USER: 300, // 5 minutes
+  PRODUCT: 600, // 10 minutes
+};
+```
+
+### src/types/express.d.ts (NEW - Fix req.user type)
+```typescript
+import { IUser } from "./index.js";
+
+declare global {
+  namespace Express {
+    interface Request {
+      user?: IUser;
+    }
+  }
+}
+```
+
+### src/types/dtos.ts (NEW - Centralized DTOs)
+```typescript
+import { UserRole } from "./index.js";
+
+// Request DTOs
+export interface RegisterUserDTO {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  phoneNumber?: string;
+}
+
+export interface LoginUserDTO {
+  email: string;
+  password: string;
+}
+
+export interface RefreshTokenDTO {
+  refreshToken: string;
+}
+
+export interface UpdateProfileDTO {
+  firstName?: string;
+  lastName?: string;
+  phoneNumber?: string;
+  avatar?: string;
+}
+
+export interface AddAddressDTO {
+  label: string;
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+  street: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+  isDefault?: boolean;
+}
+
+// Response DTOs
+export interface UserResponseDTO {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: UserRole;
+  phoneNumber?: string;
+  avatar?: string;
+  isEmailVerified: boolean;
+  createdAt: Date;
+}
+
+export interface AuthResponseDTO {
+  user: UserResponseDTO;
+  tokens: {
+    accessToken: string;
+    refreshToken: string;
+  };
+}
+
+export interface TokenResponseDTO {
+  accessToken: string;
+}
+```
+
+---
+
+## 3. Enhanced Models
+
+### src/models/user.model.ts (FIXED)
+```typescript
+import mongoose, { Schema, type HydratedDocument } from "mongoose";
+import bcrypt from "bcrypt";
+import { UserRole, type IUser } from "../types/index.js";
+
+const addressSchema = new Schema(
+  {
+    label: { type: String, required: true },
+    firstName: { type: String, required: true },
+    lastName: { type: String, required: true },
+    phoneNumber: { type: String, required: true },
+    street: { type: String, required: true },
+    city: { type: String, required: true },
+    state: { type: String, required: true },
+    zipCode: { type: String, required: true },
+    country: { type: String, required: true },
+    isDefault: { type: Boolean, default: false },
+  },
+  { _id: true }
+);
+
+const cartItemSchema = new Schema(
+  {
+    productId: {
+      type: Schema.Types.ObjectId,
+      ref: "Product",
+      required: true,
+    },
+    quantity: { type: Number, required: true, min: 1 },
+    addedAt: { type: Date, default: Date.now },
+  },
+  { _id: false }
+);
+
+const userSchema = new Schema<IUser>(
+  {
+    firstName: {
+      type: String,
+      required: [true, "First name is required"],
+      trim: true,
+      minLength: [2, "First name must be at least 2 characters"],
+      maxLength: [50, "First name cannot exceed 50 characters"],
+    },
+    lastName: {
+      type: String,
+      required: [true, "Last name is required"],
+      trim: true,
+      minLength: [2, "Last name must be at least 2 characters"],
+      maxLength: [50, "Last name cannot exceed 50 characters"],
+    },
+    email: {
+      type: String,
+      required: [true, "Email is required"],
+      unique: true,
+      lowercase: true,
+      trim: true,
+      match: [/^\S+@\S+\.\S+$/, "Please provide a valid email"],
+      index: true,
+    },
+    password: {
+      type: String,
+      required: [true, "Password is required"],
+      minlength: [8, "Password must be at least 8 characters"],
+      select: false,
+    },
+    phoneNumber: {
+      type: String,
+      trim: true,
+    },
+    avatar: {
+      type: String,
+      default: "",
+    },
+    role: {
+      type: String,
+      enum: Object.values(UserRole),
+      default: UserRole.CUSTOMER,
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    addresses: [addressSchema],
+    wishlist: [{ type: Schema.Types.ObjectId, ref: "Product" }],
+    cart: [cartItemSchema],
+    stripeCustomerId: String,
+    lastLogin: Date,
+  },
+  {
+    timestamps: true,
+    toJSON: {
+      transform: (_doc, ret) => {
+        delete ret.password;
+        delete ret.__v;
+        return ret;
+      },
+    },
+  }
+);
+
+// Indexes for performance
+userSchema.index({ email: 1 });
+userSchema.index({ role: 1 });
+userSchema.index({ createdAt: -1 });
+
+// Hash password before saving
+userSchema.pre("save", async function (this: HydratedDocument<IUser>) {
+  if (!this.isModified("password")) return;
+  const salt = await bcrypt.genSalt(12);
+  this.password = await bcrypt.hash(this.password!, salt);
+});
+
+// Compare password method
+userSchema.methods.comparePassword = async function (
+  this: HydratedDocument<IUser>,
+  candidatePassword: string
+): Promise<boolean> {
+  return bcrypt.compare(candidatePassword, this.password!);
+};
+
+export const User = mongoose.model<IUser>("User", userSchema);
+```
+
+### src/models/refreshToken.model.ts (ENHANCED)
+```typescript
+import { Schema, model, Types, type Document } from "mongoose";
+
+export interface IRefreshToken extends Document {
+  user: Types.ObjectId;
+  jti: string;
+  tokenHash: string;
+  expiresAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+  ipAddress?: string;
+  userAgent?: string;
+}
+
+const refreshTokenSchema = new Schema<IRefreshToken>(
+  {
+    user: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
+    jti: {
+      type: String,
+      required: true,
+      unique: true,
+      index: true,
+    },
+    tokenHash: {
+      type: String,
+      required: true,
+    },
+    expiresAt: {
+      type: Date,
+      required: true,
+      index: true,
+    },
+    ipAddress: {
+      type: String,
+    },
+    userAgent: {
+      type: String,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// TTL index for automatic deletion
+refreshTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+
+// Compound index for efficient queries
+refreshTokenSchema.index({ user: 1, jti: 1 });
+
+export const RefreshToken = model<IRefreshToken>("RefreshToken", refreshTokenSchema);
+```
+
+---
+
+## 4. Utilities
+
+### src/utils/logger.ts (NEW - Professional Logging)
+```typescript
+import { env, isDevelopment } from "../config/env.js";
+
+type LogLevel = "info" | "warn" | "error" | "debug";
+
+class Logger {
+  private log(level: LogLevel, message: string, meta?: unknown) {
+    const timestamp = new Date().toISOString();
+    const logMessage = {
+      timestamp,
+      level,
+      message,
+      ...(meta && { meta }),
+    };
+
+    if (isDevelopment) {
+      console[level === "error" ? "error" : "log"](
+        `[${timestamp}] ${level.toUpperCase()}: ${message}`,
+        meta || ""
+      );
+    } else {
+      // In production, you'd send this to a logging service (DataDog, LogRocket, etc.)
+      console.log(JSON.stringify(logMessage));
+    }
+  }
+
+  info(message: string, meta?: unknown) {
+    this.log("info", message, meta);
+  }
+
+  warn(message: string, meta?: unknown) {
+    this.log("warn", message, meta);
+  }
+
+  error(message: string, meta?: unknown) {
+    this.log("error", message, meta);
+  }
+
+  debug(message: string, meta?: unknown) {
+    if (isDevelopment) {
+      this.log("debug", message, meta);
+    }
+  }
+}
+
+export const logger = new Logger();
+```
+
+### src/utils/AppError.ts (ENHANCED)
+```typescript
+export class AppError extends Error {
+  public readonly statusCode: number;
+  public readonly isOperational: boolean;
+  public readonly code?: string;
+
+  constructor(message: string, statusCode = 500, code?: string) {
+    super(message);
+
+    this.statusCode = statusCode;
+    this.isOperational = true;
+    this.code = code;
+
+    Error.captureStackTrace(this, this.constructor);
+  }
+
+  static badRequest(message: string, code?: string) {
+    return new AppError(message, 400, code);
+  }
+
+  static unauthorized(message = "Unauthorized", code?: string) {
+    return new AppError(message, 401, code);
+  }
+
+  static forbidden(message = "Forbidden", code?: string) {
+    return new AppError(message, 403, code);
+  }
+
+  static notFound(message = "Resource not found", code?: string) {
+    return new AppError(message, 404, code);
+  }
+
+  static conflict(message: string, code?: string) {
+    return new AppError(message, 409, code);
+  }
+
+  static internal(message = "Internal server error", code?: string) {
+    return new AppError(message, 500, code);
+  }
+}
+```
+
+---
+
+## 5. Enhanced Services
+
+### src/services/token.service.ts (NEW - Separate Token Logic)
+```typescript
+import jwt from "jsonwebtoken";
+import { randomUUID } from "crypto";
+import bcrypt from "bcrypt";
+import type { IUser } from "../types/index.js";
+import { env } from "../config/env.js";
+import { RefreshToken } from "../models/refreshToken.model.js";
+import { REFRESH_TOKEN_TTL_DAYS } from "../constants/index.js";
+import { AppError } from "../utils/AppError.js";
+import { logger } from "../utils/logger.js";
+
+interface TokenMetadata {
+  ipAddress?: string;
+  userAgent?: string;
+}
+
+export class TokenService {
+  // Generate Access Token
+  static generateAccessToken(userId: string, role: string): string {
+    return jwt.sign(
+      { sub: userId, role },
+      env.JWT_SECRET,
+      { expiresIn: env.JWT_ACCESS_EXPIRATION }
+    );
+  }
+
+  // Generate Refresh Token
+  static generateRefreshToken(userId: string): { token: string; jti: string } {
+    const jti = randomUUID();
+    const token = jwt.sign(
+      { sub: userId, jti },
+      env.JWT_REFRESH_SECRET,
+      { expiresIn: env.JWT_REFRESH_EXPIRATION }
+    );
+    return { token, jti };
+  }
+
+  // Save Refresh Token to Database
+  static async saveRefreshToken(
+    token: string,
+    userId: string,
+    jti: string,
+    metadata?: TokenMetadata
+  ): Promise<void> {
+    const tokenHash = await bcrypt.hash(token, 10);
+    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_DAYS * 86400000);
+
+    await RefreshToken.create({
+      user: userId,
+      jti,
+      tokenHash,
+      expiresAt,
+      ...metadata,
+    });
+
+    logger.debug(`Refresh token saved for user: ${userId}`);
+  }
+
+  // Verify Access Token
+  static verifyAccessToken(token: string): { sub: string; role: string } {
+    try {
+      return jwt.verify(token, env.JWT_SECRET) as { sub: string; role: string };
+    } catch (error) {
+      logger.error("Access token verification failed", error);
+      throw AppError.unauthorized("Invalid or expired access token");
+    }
+  }
+
+  // Verify Refresh Token
+  static async verifyRefreshToken(token: string): Promise<{ sub: string; jti: string }> {
+    try {
+      const payload = jwt.verify(token, env.JWT_REFRESH_SECRET) as {
+        sub: string;
+        jti: string;
+      };
+
+      // Check if token exists in database
+      const storedToken = await RefreshToken.findOne({
+        jti: payload.jti,
+        user: payload.sub,
+      });
+
+      if (!storedToken) {
+        throw AppError.unauthorized("Refresh token not found");
+      }
+
+      // Verify token hash
+      const isValid = await bcrypt.compare(token, storedToken.tokenHash);
+      if (!isValid) {
+        throw AppError.unauthorized("Invalid refresh token");
+      }
+
+      return payload;
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      logger.error("Refresh token verification failed", error);
+      throw AppError.unauthorized("Invalid or expired refresh token");
+    }
+  }
+
+  // Revoke Refresh Token
+  static async revokeRefreshToken(jti: string): Promise<void> {
+    await RefreshToken.deleteOne({ jti });
+    logger.debug(`Refresh token revoked: ${jti}`);
+  }
+
+  // Revoke All User Tokens
+  static async revokeAllUserTokens(userId: string): Promise<void> {
+    await RefreshToken.deleteMany({ user: userId });
+    logger.info(`All refresh tokens revoked for user: ${userId}`);
+  }
+
+  // Cleanup Expired Tokens (can be run as a cron job)
+  static async cleanupExpiredTokens(): Promise<void> {
+    const result = await RefreshToken.deleteMany({
+      expiresAt: { $lt: new Date() },
+    });
+    logger.info(`Cleaned up ${result.deletedCount} expired tokens`);
+  }
+}
+```
+
+### src/services/auth.service.ts (REFACTORED)
+```typescript
+import { User } from "../models/user.model.js";
+import { TokenService } from "./token.service.js";
+import { AppError } from "../utils/AppError.js";
+import { logger } from "../utils/logger.js";
+import type {
+  RegisterUserDTO,
+  LoginUserDTO,
+  AuthResponseDTO,
+  TokenResponseDTO,
+  UserResponseDTO,
+} from "../types/dtos.js";
+import type { IUser } from "../types/index.js";
+
+export class AuthService {
+  // Register New User
+  static async register(data: RegisterUserDTO): Promise<AuthResponseDTO> {
+    const existingUser = await User.findOne({ email: data.email });
+    if (existingUser) {
+      throw AppError.conflict("User with this email already exists", "EMAIL_EXISTS");
+    }
+
+    const user = await User.create(data);
+    logger.info(`New user registered: ${user.email}`);
+
+    const tokens = await this.issueTokens(user);
+
+    return {
+      user: this.sanitizeUser(user),
+      tokens,
+    };
+  }
+
+  // Login User
+  static async login(data: LoginUserDTO, metadata?: {
+    ipAddress?: string;
+    userAgent?: string;
+  }): Promise<AuthResponseDTO> {
+    const user = await User.findOne({ email: data.email }).select("+password");
+
+    if (!user || !(await user.comparePassword(data.password))) {
+      throw AppError.unauthorized("Invalid email or password", "INVALID_CREDENTIALS");
+    }
+
+    if (!user.isActive) {
+      throw AppError.forbidden("Account is deactivated", "ACCOUNT_DEACTIVATED");
+    }
+
+    // Update last login
+    user.lastLogin = new Date();
+    await user.save();
+
+    const tokens = await this.issueTokens(user, metadata);
+
+    logger.info(`User logged in: ${user.email}`);
+
+    return {
+      user: this.sanitizeUser(user),
+      tokens,
+    };
+  }
+
+  // Refresh Access Token
+  static async refreshToken(
+    refreshToken: string,
+    metadata?: { ipAddress?: string; userAgent?: string }
+  ): Promise<TokenResponseDTO> {
+    const payload = await TokenService.verifyRefreshToken(refreshToken);
+
+    const user = await User.findById(payload.sub);
+    if (!user) {
+      throw AppError.notFound("User not found");
+    }
+
+    if (!user.isActive) {
+      throw AppError.forbidden("Account is deactivated");
+    }
+
+    // Rotate refresh token (revoke old, issue new)
+    await TokenService.revokeRefreshToken(payload.jti);
+    const newRefreshToken = TokenService.generateRefreshToken(user._id);
+    await TokenService.saveRefreshToken(
+      newRefreshToken.token,
+      user._id,
+      newRefreshToken.jti,
+      metadata
+    );
+
+    const accessToken = TokenService.generateAccessToken(user._id, user.role);
+
+    logger.debug(`Tokens refreshed for user: ${user.email}`);
+
+    return { accessToken };
+  }
+
+  // Logout User
+  static async logout(refreshToken: string): Promise<void> {
+    try {
+      const payload = await TokenService.verifyRefreshToken(refreshToken);
+      await TokenService.revokeRefreshToken(payload.jti);
+      logger.info(`User logged out: ${payload.sub}`);
+    } catch (error) {
+      // Silently fail if token is invalid
+      logger.warn("Logout attempted with invalid token");
+    }
+  }
+
+  // Issue Tokens (Access + Refresh)
+  private static async issueTokens(
+    user: IUser,
+    metadata?: { ipAddress?: string; userAgent?: string }
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    const accessToken = TokenService.generateAccessToken(user._id, user.role);
+    const { token: refreshToken, jti } = TokenService.generateRefreshToken(user._id);
+
+    await TokenService.saveRefreshToken(refreshToken, user._id, jti, metadata);
+
+    return { accessToken, refreshToken };
+  }
+
+  // Sanitize User for Response
+  private static sanitizeUser(user: IUser): UserResponseDTO {
+    return {
+      _id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      role: user.role,
+      phoneNumber: user.phoneNumber,
+      avatar: user.avatar,
+      isEmailVerified: user.isEmailVerified,
+      createdAt: user.createdAt,
+    };
+  }
+}
+```
+
+---
+
+## 6. Validators
+
+### src/validators/auth.validator.ts (NEW)
+```typescript
+import { body } from "express-validator";
+
+export const registerValidator = [
+  body("firstName")
+    .trim()
+    .notEmpty()
+    .withMessage("First name is required")
+    .isLength({ min: 2, max: 50 })
+    .withMessage("First name must be between 2 and 50 characters"),
+
+  body("lastName")
+    .trim()
+    .notEmpty()
+    .withMessage("Last name is required")
+    .isLength({ min: 2, max: 50 })
+    .withMessage("Last name must be between 2 and 50 characters"),
+
+  body("email")
+    .trim()
+    .notEmpty()
+    .withMessage("Email is required")
+    .isEmail()
+    .withMessage("Must be a valid email")
+    .normalizeEmail(),
+
+  body("password")
+    .notEmpty()
+    .withMessage("Password is required")
+    .isLength({ min: 8 })
+    .withMessage("Password must be at least 8 characters")
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+    .withMessage("Password must contain uppercase, lowercase, and number"),
+
+  body("phoneNumber")
+    .optional()
+    .trim()
+    .isMobilePhone("any")
+    .withMessage("Invalid phone number"),
+];
+
+export const loginValidator = [
+  body("email")
+    .trim()
+    .notEmpty()
+    .withMessage("Email is required")
+    .isEmail()
+    .withMessage("Must be a valid email")
+    .normalizeEmail(),
+
+  body("password").notEmpty().withMessage("Password is required"),
+];
+
+export const refreshTokenValidator = [
+  body("refreshToken").notEmpty().withMessage("Refresh token is required"),
+];
+```
+
+---
+
+## 7. Middleware
+
+### src/middleware/validation.middleware.ts (NEW)
+```typescript
+import type { Request, Response, NextFunction } from "express";
+import { validationResult } from "express-validator";
+import { AppError } from "../utils/AppError.js";
+
+export const validate = (req: Request, res: Response, next: NextFunction) => {
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    const errorMessages = errors.array().map((err) => err.msg);
+    throw AppError.badRequest(errorMessages.join(", "), "VALIDATION_ERROR");
+  }
+
+  next();
+};
+```
+
+### src/middleware/auth.middleware.ts (NEW)
+```typescript
+import type { Request, Response, NextFunction } from "express";
+import { TokenService } from "../services/token.service.js";
+import { User } from "../models/user.model.js";
+import { AppError } from "../utils/AppError.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { UserRole } from "../types/index.js";
+
+export const authenticate = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader?.startsWith("Bearer ")) {
+      throw AppError.unauthorized("No token provided", "NO_TOKEN");
+    }
+
+    const token = authHeader.substring(7);
+    const payload = TokenService.verifyAccessToken(token);
+
+    const user = await User.findById(payload.sub);
+    if (!user) {
+      throw AppError.unauthorized("User not found", "USER_NOT_FOUND");
+    }
+
+    if (!user.isActive) {
+      throw AppError.forbidden("Account is deactivated", "ACCOUNT_DEACTIVATED");
+    }
+
+    req.user = user;
+    next();
+  }
+);
+
+export const authorize = (...roles: UserRole[]) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      throw AppError.unauthorized("Authentication required");
+    }
+
+    if (!roles.includes(req.user.role)) {
+      throw AppError.forbidden(
+        "Insufficient permissions",
+        "INSUFFICIENT_PERMISSIONS"
+      );
+    }
+
+    next();
+  };
+};
+```
+
+### src/middleware/rateLimiter.middleware.ts (NEW)
+```typescript
+import rateLimit from "express-rate-limit";
+import { RATE_LIMIT } from "../constants/index.js";
+
+export const apiLimiter = rateLimit({
+  windowMs: RATE_LIMIT.WINDOW_MS,
+  max: RATE_LIMIT.MAX_REQUESTS,
+  message: "Too many requests from this IP, please try again later",
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+export const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 attempts
+  message: "Too many login attempts, please try again later",
+  skipSuccessfulRequests: true,
+});
+```
+
+### src/middleware/errorHandler.middleware.ts (ENHANCED)
+```typescript
+import type { Request, Response, NextFunction } from "express";
+import { AppError } from "../utils/AppError.js";
+import { logger } from "../utils/logger.js";
+import { isDevelopment } from "../config/env.js";
+import mongoose from "mongoose";
+
+export const errorHandler = (
+  err: Error,

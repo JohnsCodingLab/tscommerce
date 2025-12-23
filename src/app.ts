@@ -1,6 +1,6 @@
 import express from "express";
 import type { Request, Response, NextFunction } from "express";
-import authRoutes from "./auth/auth.routes.js";
+import authRoutes from "./routes/auth.routes.js";
 import { AppError } from "./utils/AppError.js";
 import { errorHandler } from "./middlewares/common/errorHandler.js";
 

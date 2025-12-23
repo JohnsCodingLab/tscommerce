@@ -1,4 +1,4 @@
-import { UserRole } from "../types/user.js";
+import { UserRole } from "../types/index.js";
 
 /* ----------- Requests ----------- */
 

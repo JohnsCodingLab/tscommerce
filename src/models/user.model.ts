@@ -1,6 +1,6 @@
 import mongoose, { Schema, type HydratedDocument } from "mongoose";
 import bcrypt from "bcrypt";
-import { UserRole, type IUser } from "../types/user.js";
+import { UserRole, type IUser } from "../types/index.js";
 
 /* ------------------ Sub Schemas ------------------ */
 
@@ -39,33 +39,37 @@ const userSchema = new Schema<IUser>(
   {
     firstName: {
       type: String,
-      required: true,
+      required: [true, "First name is required"],
       trim: true,
-      minLength: 1,
-      maxlength: 50,
+      minLength: [2, "First name must be at least 2 characters"],
+      maxLength: [50, "First name cannot exceed 50 characters"],
     },
     lastName: {
       type: String,
-      required: true,
+      required: [true, "Last name is required"],
       trim: true,
-      minLength: 1,
-      maxlength: 50,
+      minLength: [2, "Last name must be at least 2 characters"],
+      maxLength: [50, "Last name cannot exceed 50 characters"],
     },
     email: {
       type: String,
-      required: true,
+      required: [true, "Email is required"],
       unique: true,
       lowercase: true,
       trim: true,
-      match: [/^\S+@\S+\.\S+$/, "Invalid email"],
+      match: [/^\S+@\S+\.\S+$/, "Please provide a valid email"],
+      index: true,
     },
     password: {
       type: String,
-      required: true,
-      minlength: 8,
+      required: [true, "Password is required"],
+      minlength: [8, "Password must be at least 8 characters"],
       select: false,
     },
-    phoneNumber: String,
+    phoneNumber: {
+      type: String,
+      trim: true,
+    },
     avatar: {
       type: String,
       default: "",
@@ -85,17 +89,20 @@ const userSchema = new Schema<IUser>(
     cart: [cartItemSchema],
     stripeCustomerId: String,
     lastLogin: Date,
-    refreshToken: { type: String, select: false },
   },
   { timestamps: true }
 );
+
+userSchema.index({ email: 1 });
+userSchema.index({ role: 1 });
+userSchema.index({ createdAt: -1 });
 
 /* ------------------ Hooks ------------------ */
 
 userSchema.pre("save", async function (this: HydratedDocument<IUser>) {
   if (!this.isModified("password")) return;
-
-  this.password = await bcrypt.hash(this.password!, 12);
+  const salt = await bcrypt.genSalt(12);
+  this.password = await bcrypt.hash(this.password!, salt);
 });
 
 /* ------------------ Methods ------------------ */
@@ -103,7 +110,7 @@ userSchema.pre("save", async function (this: HydratedDocument<IUser>) {
 userSchema.methods.comparePassword = async function (
   this: HydratedDocument<IUser>,
   candidatePassword: string
-) {
+): Promise<boolean> {
   return bcrypt.compare(candidatePassword, this.password!);
 };
 

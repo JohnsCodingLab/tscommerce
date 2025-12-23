@@ -47,10 +47,18 @@ export interface IUser {
   // Payment Integration (e.g., Stripe)
   stripeCustomerId?: string;
 
-  refreshToken?: String;
-
   // Metadata
   lastLogin?: Date;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface AccessTokenPayload {
+  sub: string;
+  role: string;
+}
+
+export interface RefreshTokenPayload {
+  sub: string;
+  jti: string;
 }
