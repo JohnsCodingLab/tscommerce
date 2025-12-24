@@ -21,7 +21,7 @@ const refreshTokenSchema = new Schema(
     expiresAt: {
       type: Date,
       required: true,
-      index: true,
+      index: { expires: 0 },
     },
     ipAddress: {
       type: String,
@@ -34,7 +34,7 @@ const refreshTokenSchema = new Schema(
 );
 
 // TTL index for automatic deletion
-refreshTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+// refreshTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 // Compound index for efficient queries
 refreshTokenSchema.index({ user: 1, jti: 1 });
