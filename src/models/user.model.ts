@@ -1,6 +1,8 @@
-import mongoose, { Schema, type HydratedDocument } from "mongoose";
+import mongoose, { Model, Schema, type HydratedDocument } from "mongoose";
 import bcrypt from "bcrypt";
-import { UserRole, type IUser } from "../types/index.js";
+import { UserRole, type IUser, type IUserMethods } from "../types/index.js";
+
+type UserModel = Model<IUser, {}, IUserMethods>;
 
 /* ------------------ Sub Schemas ------------------ */
 
@@ -35,7 +37,7 @@ const cartItemSchema = new Schema(
 
 /* ------------------ User Schema ------------------ */
 
-const userSchema = new Schema<IUser>(
+const userSchema = new Schema<IUser, UserModel, IUserMethods>(
   {
     firstName: {
       type: String,
@@ -58,6 +60,7 @@ const userSchema = new Schema<IUser>(
       lowercase: true,
       trim: true,
       match: [/^\S+@\S+\.\S+$/, "Please provide a valid email"],
+      index: true,
     },
     password: {
       type: String,
@@ -89,28 +92,39 @@ const userSchema = new Schema<IUser>(
     stripeCustomerId: String,
     lastLogin: Date,
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toJSON: {
+      transform: (_doc, ret) => {
+        // ✅ Use Reflect.deleteProperty or omit pattern instead
+        const { password, __v, ...rest } = ret;
+        return rest;
+      },
+    },
+  }
 );
 
-userSchema.index({ email: 1 });
+// Indexes for performance
 userSchema.index({ role: 1 });
 userSchema.index({ createdAt: -1 });
 
 /* ------------------ Hooks ------------------ */
 
-userSchema.pre("save", async function (this: HydratedDocument<IUser>) {
+userSchema.pre("save", async function () {
   if (!this.isModified("password")) return;
   const salt = await bcrypt.genSalt(12);
-  this.password = await bcrypt.hash(this.password!, salt);
+  this.password = await bcrypt.hash(this.password, salt);
 });
 
 /* ------------------ Methods ------------------ */
 
 userSchema.methods.comparePassword = async function (
-  this: HydratedDocument<IUser>,
   candidatePassword: string
 ): Promise<boolean> {
-  return bcrypt.compare(candidatePassword, this.password!);
+  return bcrypt.compare(candidatePassword, this.password);
 };
 
-export const User = mongoose.model<IUser>("User", userSchema);
+export const User = mongoose.model<IUser, UserModel>("User", userSchema);
+
+// Export UserDocument type
+export type UserDocument = HydratedDocument<IUser, IUserMethods>;

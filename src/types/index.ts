@@ -1,3 +1,6 @@
+// src/types/index.ts
+import mongoose from "mongoose";
+
 export enum UserRole {
   CUSTOMER = "customer",
   VENDOR = "vendor",
@@ -6,7 +9,7 @@ export enum UserRole {
 
 export interface IAddress {
   _id?: string;
-  label: string; // e.g., "Home", "Office"
+  label: string;
   firstName: string;
   lastName: string;
   phoneNumber: string;
@@ -19,46 +22,33 @@ export interface IAddress {
 }
 
 export interface ICartItem {
-  productId: string; // Reference to Product Entity
+  productId: string;
   quantity: number;
   addedAt: Date;
 }
 
 export interface IUser {
-  // Identification
   _id: string;
   firstName: string;
   lastName: string;
   email: string;
-  password?: string; // Optional so we don't send it to the frontend
+  password: string;
   phoneNumber?: string;
   avatar?: string;
-
-  // Permissions & Status
   role: UserRole;
   isActive: boolean;
   isEmailVerified: boolean;
-
-  // E-commerce Specific Data
   addresses: IAddress[];
-  wishlist: string[]; // Array of Product IDs
+  wishlist: mongoose.Types.ObjectId[];
   cart: ICartItem[];
-
-  // Payment Integration (e.g., Stripe)
   stripeCustomerId?: string;
-
-  // Metadata
   lastLogin?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
 
-export interface AccessTokenPayload {
-  sub: string;
-  role: string;
+export interface IUserMethods {
+  comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
-export interface RefreshTokenPayload {
-  sub: string;
-  jti: string;
-}
+// Remove UserDocument from here - it's in user.model.ts

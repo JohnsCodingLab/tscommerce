@@ -1,5 +1,6 @@
 import express from "express";
 import type { Request, Response, NextFunction } from "express";
+import cookieParser from "cookie-parser";
 import authRoutes from "./routes/auth.routes.js";
 import { AppError } from "./utils/AppError.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
@@ -9,6 +10,7 @@ import { swaggerSpec } from "./config/swagger.js";
 const app = express(); // create an express app
 
 app.use(express.json());
+app.use(cookieParser());
 
 app.get("/", (req, res) => {
   res.redirect("/docs");
