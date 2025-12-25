@@ -6,6 +6,7 @@ import type {
 } from "../payload/request.dto.js";
 import type {
   AuthResponseDTO,
+  TokenResponseDTO,
   UserResponseDTO,
 } from "../payload/response.dto.js";
 import type { IUser } from "../types/index.js";
@@ -62,6 +63,60 @@ export class AuthService {
       user: this.sanitizeUser(user),
       token: tokens,
     };
+  }
+
+  // Refresh Access Token
+  static async refreshToken(
+    refreshToken: string,
+    metadata?: { ipAddress?: string; userAgent?: string }
+  ): Promise<TokenResponseDTO> {
+    const payload = await TokenService.verifyRefreshToken(refreshToken);
+
+    const user = await User.findById(payload.sub);
+    if (!user) throw AppError.notFound("User not found");
+    if (!user.isActive) throw AppError.forbidden("Account is deactivated");
+
+    // Rotate refresh token
+    await TokenService.revokeRefreshToken(payload.jti);
+
+    const { refreshToken: newRefreshToken, jti } =
+      TokenService.generateRefreshToken(user._id);
+
+    await TokenService.saveRefreshToken(
+      newRefreshToken,
+      user._id,
+      jti,
+      metadata
+    );
+
+    const accessToken = TokenService.generateAccessToken(user._id, user.role);
+
+    return { accessToken };
+  }
+
+  // Logout User (single session)
+  static async logout(refreshToken: string): Promise<void> {
+    try {
+      const payload = await TokenService.verifyRefreshToken(refreshToken);
+      await TokenService.revokeRefreshToken(payload.jti);
+      logger.info(`User logged out: ${payload.sub}`);
+    } catch {
+      logger.warn("Logout attempted with invalid refresh token");
+    }
+  }
+
+  // Logout User (All sessions)
+  static async logoutAllSessions(userId: string): Promise<void> {
+    try {
+      const user = await User.findById(userId);
+      if (!user) {
+        throw AppError.notFound("User not found", "USER_NOT_FOUND");
+      }
+      await TokenService.revokeAllUserTokens(user._id);
+      logger.info(`User logged out ${user.email}`);
+    } catch {
+      logger.warn("All user session logout failed");
+    }
   }
 
   // ----------------- Helpers ------------------

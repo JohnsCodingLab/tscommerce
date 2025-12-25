@@ -1,5 +1,10 @@
 import { Router } from "express";
-import { register } from "../controllers/auth.controller.js";
+import {
+  login,
+  logout,
+  refreshToken,
+  register,
+} from "../controllers/auth.controller.js";
 import { validate } from "../middlewares/validation.middleware.js";
 import { registerValidator } from "../validators/auth.validator.js";
 
@@ -61,6 +66,8 @@ router.post("/register", registerValidator, validate, register);
  *       200:
  *         description: Login successful
  */
-router.post("/login", validate);
+router.post("/login", login);
+router.post("/logout", logout);
+router.post("/refresh", refreshToken);
 
 export default router;

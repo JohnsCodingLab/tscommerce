@@ -38,3 +38,63 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
     },
   });
 });
+
+// logout
+export const logout = asyncHandler(async (req: Request, res: Response) => {
+  const token = req.cookies?.refreshToken;
+
+  if (token) {
+    await AuthService.logout(token);
+  }
+
+  res.clearCookie("refreshToken");
+
+  res.status(200).json({
+    status: "success",
+    message: "Logged out successfully",
+  });
+});
+
+// logout all sessions
+export const logoutAllSessions = asyncHandler(
+  async (req: Request, res: Response) => {
+    const userId = req.params.id;
+
+    if (userId) {
+      await AuthService.logoutAllSessions(userId);
+    }
+
+    res.clearCookie("refreshToken");
+
+    res.status(200).json({
+      status: "success",
+      message: "Logout all user sessions",
+    });
+  }
+);
+
+// Refresh Access Token
+export const refreshToken = asyncHandler(
+  async (req: Request, res: Response) => {
+    const token = req.cookies?.refreshToken;
+
+    if (!token) {
+      return res.status(401).json({
+        status: "error",
+        message: "Refresh token missing",
+      });
+    }
+
+    const metadata = {
+      ipAddress: req.ip,
+      userAgent: req.headers["user-agent"],
+    };
+
+    const result = await AuthService.refreshToken(token, metadata);
+
+    res.status(200).json({
+      status: "success",
+      data: result,
+    });
+  }
+);
