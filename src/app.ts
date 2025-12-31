@@ -9,16 +9,15 @@ import { swaggerSpec } from "./config/swagger.js";
 
 const app = express(); // create an express app
 
+// MiddleWares
 app.use(express.json());
 app.use(cookieParser());
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use("/api/v1/auth", authRoutes);
 
 app.get("/", (req, res) => {
   res.redirect("/docs");
 });
-
-app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-
-app.use("/api/v1/auth", authRoutes);
 
 // 404 handler
 app.all("{/*path}", (_req: Request, _res: Response, next: NextFunction) => {
