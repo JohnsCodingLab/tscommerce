@@ -1,4 +1,4 @@
-import { UserRole } from "../../generated/prisma/index.js";
+import type { UserRole } from "#generated/prisma/index.js";
 
 export interface RegisterUserDTO {
   firstName: string;

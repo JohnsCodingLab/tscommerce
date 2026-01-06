@@ -1,9 +1,9 @@
 import jwt, { type SignOptions } from "jsonwebtoken";
 import { randomUUID } from "crypto";
 import bcrypt from "bcrypt";
-import { prisma } from "../../config/prisma.js";
-import { env } from "../../config/env.js";
-import { AppError } from "../../shared/utils/AppError.js";
+import { env } from "#config/env.js";
+import prisma from "#config/prisma.js";
+import { AppError } from "#shared/utils/AppError.js";
 
 export class TokenService {
   // Generate access token

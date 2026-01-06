@@ -1,13 +1,13 @@
-import { prisma } from "../../config/prisma.js";
-import { TokenService } from "./token.service.js";
-import { hashPassword, comparePassword } from "../../shared/utils/password.js";
-import { AppError } from "../../shared/utils/AppError.js";
+import prisma from "#config/prisma.js";
+import { AppError } from "#shared/utils/AppError.js";
+import { comparePassword, hashPassword } from "#shared/utils/password.js";
 import type {
-  RegisterUserDTO,
-  LoginUserDTO,
   AuthResponseDTO,
+  LoginUserDTO,
+  RegisterUserDTO,
   UserResponseDTO,
 } from "./auth.types.js";
+import { TokenService } from "./token.service.js";
 
 export class AuthService {
   // Register user

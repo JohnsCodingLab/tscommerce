@@ -2,6 +2,12 @@
   "compilerOptions": {
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@config/*": ["./src/config/*"],
+      "@shared/*": ["./src/shared/*"],
+      "@prisma/*": ["./src/generated/prisma/*"]
+    },
     "target": "ESNext",
     "outDir": "dist",
     "rootDir": "src",
