@@ -2,26 +2,25 @@
   "compilerOptions": {
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "paths": {
-      "@/*": ["./src/*"],
-      "@config/*": ["./src/config/*"],
-      "@shared/*": ["./src/shared/*"],
-      "@prisma/*": ["./src/generated/prisma/*"]
-    },
     "target": "ESNext",
     "outDir": "dist",
     "rootDir": "src",
 
+    "paths": {
+      "@/*": ["./src/*"],
+      "@config/*": ["./src/config/*"],
+      "@shared/*": ["./src/shared/*"],
+      "@modules/*": ["./src/modules/*"],
+      "@prisma/*": ["./src/generated/prisma/*"]
+    },
+
     "strict": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-
     "resolveJsonModule": true,
     "sourceMap": true,
-
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
-
     "skipLibCheck": true
   },
   "include": ["src", "src/types"],
