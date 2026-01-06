@@ -12,6 +12,7 @@ const envSchema = z.object({
 
   // Database
   MONGO_URI: z.string().min(1, "MONGO_URI is required"),
+  DATABASE_URL: z.string().min(1, "DATABASE URL is required"),
 
   // jwt
   JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
@@ -30,7 +31,17 @@ if (!parsedEnv.success) {
   process.exit(1);
 }
 
-export const env = parsedEnv.data;
+// Explicitly type the export to avoid Zod's readonly types
+export const env: {
+  NODE_ENV: "development" | "production" | "test";
+  PORT: number;
+  MONGO_URI: string;
+  DATABASE_URL: string;
+  JWT_SECRET: string;
+  JWT_REFRESH_SECRET: string;
+  JWT_ACCESS_EXPIRATION: string;
+  JWT_REFRESH_EXPIRATION: string;
+} = parsedEnv.data;
 
 export const isDevelopment = env.NODE_ENV === "development";
 export const isProduction = env.NODE_ENV === "production";

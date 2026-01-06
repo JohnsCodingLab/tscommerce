@@ -1,9 +1,19 @@
-/* ----------- Responses ----------- */
+import { UserRole } from "../../generated/prisma/index.js";
 
-import type { UserRole } from "../types/index.js";
+export interface RegisterUserDTO {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+}
+
+export interface LoginUserDTO {
+  email: string;
+  password: string;
+}
 
 export interface UserResponseDTO {
-  _id: string;
+  id: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -12,16 +22,12 @@ export interface UserResponseDTO {
 
 export interface AuthResponseDTO {
   user: UserResponseDTO;
-  token: {
+  tokens: {
     accessToken: string;
     refreshToken: string;
   };
 }
 
 export interface TokenResponseDTO {
-  accessToken: string;
-}
-
-export interface RefreshResponseDTO {
   accessToken: string;
 }

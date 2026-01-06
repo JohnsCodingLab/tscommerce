@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { TokenService } from "../services/token.service.js";
 import { User } from "../models/user.model.js";
-import { AppError } from "../utils/AppError.js";
+import { AppError } from "../shared/utils/AppError.js";
 import { UserRole } from "../types/index.js";
 import { asyncHandler } from "./asyncHandler.js";
 

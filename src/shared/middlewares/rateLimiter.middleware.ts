@@ -1,5 +1,5 @@
 import rateLimit from "express-rate-limit";
-import { RATE_LIMIT } from "../constants/index.js";
+import { RATE_LIMIT } from "../shared/constants/index.js";
 
 export const apiLimiter = rateLimit({
   windowMs: RATE_LIMIT.WINDOW_MS,

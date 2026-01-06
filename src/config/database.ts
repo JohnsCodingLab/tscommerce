@@ -1,15 +1,13 @@
-import mongoose from "mongoose";
-import { env } from "./env.js";
+import { prisma } from "./prisma.js";
 
 const connectDB = async (): Promise<void> => {
   try {
-    const connectionInstance = await mongoose.connect(env.MONGO_URI);
+    await prisma.$connect();
+    await prisma.$queryRaw`SELECT 1`;
 
-    console.log(
-      `MongoDb Connected !!! \n ${connectionInstance.connection.host}`
-    );
+    console.log("🟢 PostgreSQL is alive and connected via Driver Adapter");
   } catch (error) {
-    console.error("MongoDb Connection Failed");
+    console.error("PostgreSQL Connection Failed");
     console.error(error);
     process.exit(1);
   }

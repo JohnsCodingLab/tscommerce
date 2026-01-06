@@ -1,4 +1,4 @@
-import { env, isDevelopment } from "../config/env.js";
+import { env, isDevelopment } from "../../config/env.js";
 
 type LogLevel = "info" | "warn" | "error" | "debug";
 
