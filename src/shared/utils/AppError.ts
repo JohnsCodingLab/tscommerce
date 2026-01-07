@@ -33,6 +33,10 @@ export class AppError extends Error {
     return new AppError(message, 409, code);
   }
 
+  static validation(message: string, code?: string) {
+    return new AppError(message, 422, code); // 422 Unprocessable Entity
+  }
+
   static internal(message = "Internal server error", code?: string) {
     return new AppError(message, 500, code);
   }

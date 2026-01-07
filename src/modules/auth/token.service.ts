@@ -45,7 +45,19 @@ export class TokenService {
     });
   }
 
-  //   Verify Access Token
+  // verify access token
+  static verifyAccessToken(token: string) {
+    const decoded = jwt.verify(token, env.JWT_SECRET);
+
+    // Type Narrowing: Check if it's an object and has our properties
+    if (typeof decoded === "string" || !decoded.sub || !decoded.role) {
+      throw AppError.unauthorized("Invalid token payload");
+    }
+
+    return decoded;
+  }
+
+  //   Verify Refresh Token
   static async verifyRefreshToken(token: string) {
     try {
       const payload = jwt.verify(token, env.JWT_REFRESH_SECRET) as {

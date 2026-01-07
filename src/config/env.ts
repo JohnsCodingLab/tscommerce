@@ -12,9 +12,9 @@ const envSchema = z.object({
 
   // Database
   MONGO_URI: z.string().min(1, "MONGO_URI is required"),
-  DATABASE_URL: z.string().min(1, "DATABASE URL is required"),
+  DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
 
-  // jwt
+  // JWT
   JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
   JWT_REFRESH_SECRET: z
     .string()
@@ -23,26 +23,9 @@ const envSchema = z.object({
   JWT_REFRESH_EXPIRATION: z.string().default("7d"),
 });
 
-const parsedEnv = envSchema.safeParse(process.env);
-
-if (!parsedEnv.success) {
-  console.error("❌ Invalid environment variables:");
-  console.error(parsedEnv.error);
-  process.exit(1);
-}
-
-// Explicitly type the export to avoid Zod's readonly types
-export const env: {
-  NODE_ENV: "development" | "production" | "test";
-  PORT: number;
-  MONGO_URI: string;
-  DATABASE_URL: string;
-  JWT_SECRET: string;
-  JWT_REFRESH_SECRET: string;
-  JWT_ACCESS_EXPIRATION: string;
-  JWT_REFRESH_EXPIRATION: string;
-} = parsedEnv.data;
+// parse() throws an error and stops the app if validation fails.
+// This is better than safeParse for critical infrastructure like Env.
+export const env = envSchema.parse(process.env);
 
 export const isDevelopment = env.NODE_ENV === "development";
 export const isProduction = env.NODE_ENV === "production";
-export const isTest = env.NODE_ENV === "test";

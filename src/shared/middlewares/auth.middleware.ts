@@ -1,48 +1,33 @@
-// import type { Request, Response, NextFunction } from "express";
-// import { TokenService } from "../services/token.service.js";
-// import { User } from "../models/user.model.js";
-// import { AppError } from "../shared/utils/AppError.js";
-// import { UserRole } from "../types/index.js";
-// import { asyncHandler } from "./asyncHandler.js";
+import type { Request, Response, NextFunction } from "express";
+import { TokenService } from "#modules/auth/token.service.js";
+import { AppError } from "#shared/utils/AppError.js";
+import { asyncHandler } from "#shared/utils/asyncHandler.js";
+import type { UserRole } from "#generated/prisma/index.js";
 
-// export const authenticate = asyncHandler(
-//   async (req: Request, res: Response, next: NextFunction) => {
-//     const authHeader = req.headers.authorization;
+export const authenticate = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const authHeader = req.headers.authorization;
 
-//     if (!authHeader?.startsWith("Bearer ")) {
-//       throw AppError.unauthorized("No token provided", "NO_TOKEN");
-//     }
+    if (!authHeader?.startsWith("Bearer ")) {
+      throw AppError.unauthorized("Authentication Required", "NO_TOKEN");
+    }
 
-//     const token = authHeader.substring(7);
-//     const payload = TokenService.verifyAccessToken(token);
+    const token = authHeader.split(" ")[1];
 
-//     const user = await User.findById(payload.sub);
-//     if (!user) {
-//       throw AppError.unauthorized("User not found", "USER_NOT_FOUND");
-//     }
+    // 1. Get the payload
+    const payload = TokenService.verifyAccessToken(token);
 
-//     if (!user.isActive) {
-//       throw AppError.forbidden("Account is deactivated", "ACCOUNT_DEACTIVATED");
-//     }
+    // 2. Narrow the type: Ensure sub and role are definitely strings
+    if (!payload.sub || !payload.role) {
+      throw AppError.unauthorized("Invalid Token Payload", "MALFORMED_TOKEN");
+    }
 
-//     req.user = user;
-//     next();
-//   }
-// );
+    // 3. Assign to req.user (TS will now know these are strings)
+    req.user = {
+      id: payload.sub,
+      role: payload.role as UserRole,
+    };
 
-// export const authorize = (...roles: UserRole[]) => {
-//   return (req: Request, res: Response, next: NextFunction) => {
-//     if (!req.user) {
-//       throw AppError.unauthorized("Authentication required");
-//     }
-
-//     if (!roles.includes(req.user.role)) {
-//       throw AppError.forbidden(
-//         "Insufficient permissions",
-//         "INSUFFICIENT_PERMISSIONS"
-//       );
-//     }
-
-//     next();
-//   };
-// };
+    next();
+  }
+);
