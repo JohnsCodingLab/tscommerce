@@ -11,7 +11,6 @@ const envSchema = z.object({
   PORT: z.coerce.number().default(5000),
 
   // Database
-  MONGO_URI: z.string().min(1, "MONGO_URI is required"),
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
 
   // JWT

@@ -67,9 +67,21 @@ export class AuthService {
   static async refresh(refreshToken: string) {
     const payload = await TokenService.verifyRefreshToken(refreshToken);
 
+    const user = await prisma.user.findUnique({
+      where: { id: payload.sub },
+    });
+
+    if (!user) {
+      throw AppError.unauthorized("User no longer exists");
+    }
+
+    if (!user.isActive) {
+      throw AppError.forbidden("Account disabled");
+    }
+
     await TokenService.revokeRefreshToken(payload.jti);
 
-    const accessToken = TokenService.generateAccessToken(payload.sub, "BUYER");
+    const accessToken = TokenService.generateAccessToken(user.id, user.role);
 
     return { accessToken };
   }

@@ -4,6 +4,8 @@ import bcrypt from "bcrypt";
 import { env } from "#config/env.js";
 import prisma from "#config/prisma.js";
 import { AppError } from "#shared/utils/AppError.js";
+import { hashPassword } from "#shared/utils/password.js";
+import ms, { type StringValue } from "ms";
 
 export class TokenService {
   // Generate access token
@@ -31,8 +33,10 @@ export class TokenService {
     jti: string,
     meta?: { ipAddress?: string; userAgent?: string }
   ) {
-    const tokenHash = await bcrypt.hash(token, 12);
-    const expiresAt = new Date(Date.now() + 7 * 86400000);
+    const tokenHash = await hashPassword(token);
+
+    const expireInMs = ms(env.JWT_REFRESH_EXPIRATION as StringValue);
+    const expiresAt = new Date(Date.now() + expireInMs);
 
     await prisma.refreshToken.create({
       data: {

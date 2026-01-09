@@ -5,21 +5,26 @@ import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./config/swagger.js";
 import { errorHandler } from "#shared/middlewares/errorHandler.js";
 import { AppError } from "#shared/utils/AppError.js";
+import helmet from "helmet";
+import cors from "cors";
 
 const app = express(); // create an express app
 
 // MiddleWares
+app.use(helmet());
+app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
+// routes
 app.get("/", (req, res) => {
   res.redirect("/docs");
 });
 
 // 404 handler
-app.all("{/*path}", (_req: Request, _res: Response, next: NextFunction) => {
-  next(new AppError("Route not found", 404));
+app.all("*path", (req: Request, res: Response, next: NextFunction) => {
+  next(new AppError(`Route ${req.originalUrl} not found`, 404));
 });
 
 // Global error handler (MUST BE LAST)
