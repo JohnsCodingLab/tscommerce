@@ -1,4 +1,8 @@
 import { z } from "zod";
+import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
+import { registry } from "#shared/docs/openapi.js";
+
+extendZodWithOpenApi(z);
 
 export const registerSchema = z.object({
   body: z.object({
@@ -27,6 +31,6 @@ export const refreshSchema = z.object({
     refreshToken: z.string().min(10),
   }),
 });
-
+registry.register("RegisterInput", registerSchema.shape.body);
 export type RegisterUserDTO = z.infer<typeof registerSchema>["body"];
 export type LoginUserDTO = z.infer<typeof loginSchema>["body"];
