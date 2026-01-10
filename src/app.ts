@@ -29,7 +29,7 @@ app.get("/", (req, res) => {
 });
 
 // 404 handler
-app.all("*path", (req: Request, res: Response, next: NextFunction) => {
+app.all("{/*path}", (req: Request, res: Response, next: NextFunction) => {
   next(new AppError(`Route ${req.originalUrl} not found`, 404));
 });
 

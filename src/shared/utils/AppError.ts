@@ -13,31 +13,31 @@ export class AppError extends Error {
     Error.captureStackTrace(this, this.constructor);
   }
 
-  static badRequest(message: string, code?: string) {
+  static badRequest(message: string, code?: any) {
     return new AppError(message, 400, code);
   }
 
-  static unauthorized(message = "Unauthorized", code?: string) {
+  static unauthorized(message = "Unauthorized", code?: any) {
     return new AppError(message, 401, code);
   }
 
-  static forbidden(message = "Forbidden", code?: string) {
+  static forbidden(message = "Forbidden", code?: any) {
     return new AppError(message, 403, code);
   }
 
-  static notFound(message = "Resource not found", code?: string) {
+  static notFound(message = "Resource not found", code?: any) {
     return new AppError(message, 404, code);
   }
 
-  static conflict(message: string, code?: string) {
+  static conflict(message: string, code?: any) {
     return new AppError(message, 409, code);
   }
 
-  static validation(message: string, code?: string) {
+  static validation(message: string, code?: any) {
     return new AppError(message, 422, code); // 422 Unprocessable Entity
   }
 
-  static internal(message = "Internal server error", code?: string) {
+  static internal(message = "Internal server error", code?: any) {
     return new AppError(message, 500, code);
   }
 }

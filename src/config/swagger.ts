@@ -1,34 +1,5 @@
-import swaggerJSDoc from "swagger-jsdoc";
 import { getOpenApiDocumentation } from "#shared/docs/openapi.js";
 import "#modules/auth/auth.validator.js";
-
-// export const swaggerSpec = swaggerJSDoc({
-//   definition: {
-//     openapi: "3.0.3",
-//     info: {
-//       title: "TSCommerce API",
-//       version: "1.0.0",
-//       description:
-//         "E-commerce REST API built with Node.js, TypeScript & MongoDB",
-//     },
-//     servers: [
-//       {
-//         url: "http://localhost:3000/api/v1",
-//         description: "Development server",
-//       },
-//     ],
-//     components: {
-//       securitySchemes: {
-//         bearerAuth: {
-//           type: "http",
-//           scheme: "bearer",
-//           bearerFormat: "JWT",
-//         },
-//       },
-//     },
-//     security: [{ bearerAuth: [] }],
-//   },
-//   apis: ["./src/modules/**/*.ts", "./src/shared/utils/AppError.ts"], // 👈 where docs will live
-// });
+import "#modules/auth/auth.route.js";
 
 export const swaggerSpec = getOpenApiDocumentation();
