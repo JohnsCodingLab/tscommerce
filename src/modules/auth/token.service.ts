@@ -97,4 +97,6 @@ export class TokenService {
   static async revokeAllUserTokens(userId: string) {
     await prisma.refreshToken.deleteMany({ where: { userId } });
   }
+
+  // static validatePayload():
 }

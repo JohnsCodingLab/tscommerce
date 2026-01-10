@@ -88,6 +88,10 @@ export class AuthService {
 
   //   Logout User
   static async logout(refreshToken: string) {
+    if (!refreshToken) {
+      throw AppError.unauthorized("No refresh token provided");
+    }
+
     const payload = await TokenService.verifyRefreshToken(refreshToken);
     await TokenService.revokeRefreshToken(payload.jti);
   }

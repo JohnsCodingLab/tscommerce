@@ -2,7 +2,6 @@ import {
   OpenAPIRegistry,
   OpenApiGeneratorV3,
 } from "@asteasolutions/zod-to-openapi";
-import { z } from "zod";
 
 export const registry = new OpenAPIRegistry();
 

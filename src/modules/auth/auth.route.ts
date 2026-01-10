@@ -8,12 +8,13 @@ import {
 } from "./auth.validator.js";
 import { authRateLimiter } from "#shared/middlewares/rateLimiter.middleware.js";
 import { registry } from "#shared/docs/openapi.js";
+import { authenticate } from "#shared/middlewares/auth.middleware.js";
 
 const router = Router();
 
 registry.registerPath({
   method: "post",
-  path: "/auth/register",
+  path: "/register",
   summary: "Register a new user",
   tags: ["Auth"],
   request: {
@@ -44,7 +45,7 @@ router.post(
 
 registry.registerPath({
   method: "post",
-  path: "api/v1/auth/login",
+  path: "/login",
   summary: "Login",
   tags: ["Auth"],
   request: {
@@ -73,7 +74,7 @@ router.post(
 // refresh token
 registry.registerPath({
   method: "post",
-  path: "api/v1/auth/refresh",
+  path: "/refresh",
   summary: "Refresh Access Token",
   tags: ["Auth"],
   request: {
@@ -96,15 +97,16 @@ router.post("/refresh", validate(refreshSchema), AuthController.refreshToken);
 // refresh token
 registry.registerPath({
   method: "post",
-  path: "api/v1/auth/logout",
+  path: "/logout",
   summary: "Logout",
   tags: ["Auth"],
+  security: [{ bearerAuth: [] }],
   responses: {
     200: {
       description: "Logout Successfull",
     },
   },
 });
-router.post("/logout", validate(refreshSchema), AuthController.logout);
+router.post("/logout", authenticate, AuthController.logout);
 
 export default router;

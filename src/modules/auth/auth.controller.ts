@@ -1,6 +1,7 @@
 import { AuthService } from "./auth.service.js";
 import { asyncHandler } from "#shared/utils/asyncHandler.js";
 import type { LoginUserDTO, RegisterUserDTO } from "./auth.validator.js";
+import { AppError } from "#shared/utils/AppError.js";
 
 export const register = asyncHandler(async (req, res) => {
   const result = await AuthService.register(req.body as RegisterUserDTO);
@@ -28,5 +29,6 @@ export const refreshToken = asyncHandler(async (req, res) => {
 
 export const logout = asyncHandler(async (req, res) => {
   await AuthService.logout(req.body.refreshToken);
+  res.clearCookie("refreshToken");
   res.status(204).send();
 });

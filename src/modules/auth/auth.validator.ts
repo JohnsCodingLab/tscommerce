@@ -34,7 +34,7 @@ export const refreshSchema = z.object({
 
 registry.register("RegisterInput", registerSchema.shape.body);
 registry.register("LoginInput", loginSchema.shape.body);
-registry.register("RefreshInput", registerSchema.shape.body);
+registry.register("RefreshInput", refreshSchema.shape.body);
 
 export type RegisterUserDTO = z.infer<typeof registerSchema>["body"];
 export type LoginUserDTO = z.infer<typeof loginSchema>["body"];
