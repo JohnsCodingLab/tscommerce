@@ -16,19 +16,7 @@ export const authenticate = asyncHandler(
 
     const payload = TokenService.verifyAccessToken(token);
 
-    // 2. Narrow the type: Ensure sub and role are definitely strings
-    if (!Object.values(UserRole).includes(payload.role as UserRole)) {
-      throw AppError.forbidden("Invalid user role in token");
-    }
-
-    if (!payload.sub || !payload.role) {
-      throw AppError.unauthorized("Invalid token payload");
-    }
-
-    req.user = {
-      id: payload.sub,
-      role: payload.role as UserRole,
-    };
+    req.user = TokenService.validatePayload(payload);
 
     next();
   }

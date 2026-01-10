@@ -6,6 +6,8 @@ import prisma from "#config/prisma.js";
 import { AppError } from "#shared/utils/AppError.js";
 import { hashPassword } from "#shared/utils/password.js";
 import ms, { type StringValue } from "ms";
+import type { ValidatedUser } from "#shared/types/index.js";
+import { UserRole } from "#generated/prisma/index.js";
 
 export class TokenService {
   // Generate access token
@@ -98,5 +100,23 @@ export class TokenService {
     await prisma.refreshToken.deleteMany({ where: { userId } });
   }
 
-  // static validatePayload():
+  /**
+   * Validates the raw JWT payload and transforms it into a typed object.
+   * This removes the need for unsafe casting in middlewares.
+   */
+  static validatePayload(payload: any): ValidatedUser {
+    if (!payload?.sub || !payload?.role) {
+      throw AppError.unauthorized("Invalid token payload structure");
+    }
+
+    const roleValue = payload.role as UserRole;
+    if (!Object.values(UserRole).includes(roleValue)) {
+      throw AppError.forbidden("Token contains an unrecognized user role");
+    }
+
+    return {
+      id: payload.sub,
+      role: roleValue,
+    };
+  }
 }
