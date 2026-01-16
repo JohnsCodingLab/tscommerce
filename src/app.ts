@@ -14,7 +14,12 @@ const app = express(); // create an express app
 
 // MiddleWares
 app.use(helmet());
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:3001", // your frontend URL
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use(cookieParser());
 

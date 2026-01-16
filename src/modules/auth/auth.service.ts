@@ -1,5 +1,6 @@
 import prisma from "#config/prisma.js";
 import { AppError } from "#shared/utils/AppError.js";
+import { logger } from "#shared/utils/Logger.js";
 import { comparePassword, hashPassword } from "#shared/utils/password.js";
 import type { AuthResponseDTO, UserResponseDTO } from "./auth.types.js";
 import type { LoginUserDTO, RegisterUserDTO } from "./auth.validator.js";
@@ -43,10 +44,12 @@ export class AuthService {
     });
 
     if (!user || !(await comparePassword(data.password, user.passwordHash))) {
+      logger.error("Invalid Credentials");
       throw AppError.unauthorized("Invalid credentials");
     }
 
     if (!user.isActive) {
+      logger.error("");
       throw AppError.forbidden("Account disabled");
     }
 
@@ -64,7 +67,14 @@ export class AuthService {
   }
 
   //   Refresh Access Token
-  static async refresh(refreshToken: string) {
+  static async refresh(
+    refreshToken: string,
+    meta?: { ipAddress?: string; userAgent?: string }
+  ) {
+    if (!refreshToken) {
+      throw AppError.unauthorized("No refresh token provided");
+    }
+
     const payload = await TokenService.verifyRefreshToken(refreshToken);
 
     const user = await prisma.user.findUnique({
@@ -81,14 +91,15 @@ export class AuthService {
 
     await TokenService.revokeRefreshToken(payload.jti);
 
-    const accessToken = TokenService.generateAccessToken(user.id, user.role);
+    const tokens = await this.issueTokens(user.id, user.role, meta);
 
-    return { accessToken };
+    return { tokens };
   }
 
   //   Logout User
   static async logout(refreshToken: string) {
     if (!refreshToken) {
+      logger.error("No refresh token provided");
       throw AppError.unauthorized("No refresh token provided");
     }
 

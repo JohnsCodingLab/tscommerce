@@ -14,7 +14,7 @@ const router = Router();
 
 registry.registerPath({
   method: "post",
-  path: "/register",
+  path: "/api/v1/auth/register",
   summary: "Register a new user",
   tags: ["Auth"],
   request: {
@@ -45,7 +45,7 @@ router.post(
 
 registry.registerPath({
   method: "post",
-  path: "/login",
+  path: "/api/v1/auth/login",
   summary: "Login",
   tags: ["Auth"],
   request: {
@@ -74,7 +74,7 @@ router.post(
 // refresh token
 registry.registerPath({
   method: "post",
-  path: "/refresh",
+  path: "/api/v1/auth/refresh-token",
   summary: "Refresh Access Token",
   tags: ["Auth"],
   request: {
@@ -92,15 +92,18 @@ registry.registerPath({
     },
   },
 });
-router.post("/refresh", validate(refreshSchema), AuthController.refreshToken);
+router.post(
+  "/refresh-token",
+  validate(refreshSchema),
+  AuthController.refreshToken
+);
 
 // refresh token
 registry.registerPath({
   method: "post",
-  path: "/logout",
+  path: "/api/v1/auth/logout",
   summary: "Logout",
   tags: ["Auth"],
-  security: [{ bearerAuth: [] }],
   responses: {
     200: {
       description: "Logout Successfull",

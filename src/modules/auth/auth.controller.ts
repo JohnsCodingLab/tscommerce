@@ -13,22 +13,48 @@ export const login = asyncHandler(async (req, res) => {
     ipAddress: req.ip,
     userAgent: req.headers["user-agent"],
   });
-  res.status(200).json(result);
+
+  res.cookie("refreshToken", result.tokens.refreshToken, {
+    httpOnly: true,
+    secure: false, //process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+
+  res.status(200).json({
+    user: result.user,
+    accessToken: result.tokens.accessToken,
+  });
 });
 
 export const refreshToken = asyncHandler(async (req, res) => {
-  const result = await AuthService.refresh(
-    req.body.refreshToken
-    // {
-    //   ipAddress: req.ip,
-    //   userAgent: req.headers["user-agent"],
-    // }
-  );
-  res.status(200).json(result);
+  const refreshToken = req.cookies?.refreshToken;
+  const result = await AuthService.refresh(refreshToken, {
+    ipAddress: req.ip,
+    userAgent: req.headers["user-agent"],
+  });
+
+  res.cookie("refreshToken", result.tokens.refreshToken, {
+    httpOnly: true,
+    secure: false, //process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+
+  res.status(200).json({
+    accessToken: result.tokens.accessToken,
+  });
 });
 
 export const logout = asyncHandler(async (req, res) => {
-  await AuthService.logout(req.body.refreshToken);
-  res.clearCookie("refreshToken");
+  const refreshToken = req.cookies?.refreshToken;
+  await AuthService.logout(refreshToken);
+
+  res.clearCookie("refreshToken", {
+    httpOnly: true,
+    secure: false, //process.env.NODE_ENV === "production",
+    sameSite: "lax",
+  });
+
   res.status(204).send();
 });
