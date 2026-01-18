@@ -8,7 +8,6 @@ import {
 } from "./auth.validator.js";
 import { authRateLimiter } from "#shared/middlewares/rateLimiter.middleware.js";
 import { registry } from "#shared/docs/openapi.js";
-import { authenticate } from "#shared/middlewares/auth.middleware.js";
 
 const router = Router();
 
@@ -110,6 +109,6 @@ registry.registerPath({
     },
   },
 });
-router.post("/logout", authenticate, AuthController.logout);
+router.post("/logout", AuthController.logout);
 
 export default router;

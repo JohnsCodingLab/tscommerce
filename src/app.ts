@@ -9,8 +9,14 @@ import { errorHandler } from "#shared/middlewares/errorHandler.js";
 import { AppError } from "#shared/utils/AppError.js";
 
 import authRouter from "#modules/auth/auth.route.js";
+import { env } from "#config/env.js";
+import morgan from "morgan";
 
 const app = express(); // create an express app
+
+if ((env.NODE_ENV = "development")) {
+  app.use(morgan("dev"));
+}
 
 // MiddleWares
 app.use(helmet());

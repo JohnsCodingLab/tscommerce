@@ -1,25 +1,36 @@
-import { env, isDevelopment } from "../../config/env.js";
+import { isDevelopment } from "../../config/env.js";
 
 type LogLevel = "info" | "warn" | "error" | "debug";
 
 class Logger {
   private log(level: LogLevel, message: string, meta?: any) {
     const timestamp = new Date().toISOString();
-    const logMessage = {
-      timestamp,
-      level,
-      message,
-      ...(meta && { meta }),
-    };
+
+    // const logMessage = {
+    //   timestamp,
+    //   level,
+    //   message,
+    //   ...(meta && { meta }),
+    // };
 
     if (isDevelopment) {
-      console[level === "error" ? "error" : "log"](
+      // Map levels to console methods to ensure they show up in your terminal
+      const consoleMethod =
+        level === "debug"
+          ? "debug"
+          : level === "error"
+          ? "error"
+          : level === "warn"
+          ? "warn"
+          : "log";
+
+      console[consoleMethod](
         `[${timestamp}] ${level.toUpperCase()}: ${message}`,
-        meta || ""
+        meta !== undefined ? meta : ""
       );
     } else {
-      // In production, you'd send this to a logging service (DataDog, LogRocket, etc.)
-      console.log(JSON.stringify(logMessage));
+      // Production JSON logging
+      console.log(JSON.stringify({ timestamp, level, message, meta }));
     }
   }
 

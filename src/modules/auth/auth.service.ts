@@ -14,6 +14,7 @@ export class AuthService {
     });
 
     if (existing) {
+      logger.warn(`User with email ${existing.email} already exist`);
       throw AppError.conflict("Email already in use");
     }
 
@@ -25,8 +26,10 @@ export class AuthService {
         passwordHash: await hashPassword(data.password),
       },
     });
+    logger.info(`user registered succesffully ${user}`);
 
     const tokens = await this.issueTokens(user.id, user.role);
+    logger.info(`issued toker for user with id: ${user.id}`);
 
     return {
       user: this.sanitize(user),
@@ -44,12 +47,12 @@ export class AuthService {
     });
 
     if (!user || !(await comparePassword(data.password, user.passwordHash))) {
-      logger.error("Invalid Credentials");
+      logger.warn(`Login failed: User not found for email ${data.email}`);
       throw AppError.unauthorized("Invalid credentials");
     }
 
     if (!user.isActive) {
-      logger.error("");
+      logger.warn(`Login failed: Incorrect password for UID ${user.id}`);
       throw AppError.forbidden("Account disabled");
     }
 
@@ -58,6 +61,7 @@ export class AuthService {
       data: { lastLogin: new Date() },
     });
 
+    logger.debug(`Issuing new token set for UID ${user.id}`);
     const tokens = await this.issueTokens(user.id, user.role, meta);
 
     return {
@@ -72,6 +76,7 @@ export class AuthService {
     meta?: { ipAddress?: string; userAgent?: string }
   ) {
     if (!refreshToken) {
+      logger.warn(`No refresh  token provided`);
       throw AppError.unauthorized("No refresh token provided");
     }
 
@@ -82,16 +87,19 @@ export class AuthService {
     });
 
     if (!user) {
+      logger.warn(`User not found or no longer exist`);
       throw AppError.unauthorized("User no longer exists");
     }
 
     if (!user.isActive) {
+      logger.warn(`User account is disabled`);
       throw AppError.forbidden("Account disabled");
     }
 
     await TokenService.revokeRefreshToken(payload.jti);
 
     const tokens = await this.issueTokens(user.id, user.role, meta);
+    logger.info(`Tokens issued successfully`);
 
     return { tokens };
   }
@@ -99,12 +107,12 @@ export class AuthService {
   //   Logout User
   static async logout(refreshToken: string) {
     if (!refreshToken) {
-      logger.error("No refresh token provided");
+      logger.warn("No refresh token provided");
       throw AppError.unauthorized("No refresh token provided");
     }
 
     const payload = await TokenService.verifyRefreshToken(refreshToken);
-    await TokenService.revokeRefreshToken(payload.jti);
+    await TokenService.revokeAllUserTokens(payload.sub);
   }
 
   //   Issue tokens to user
