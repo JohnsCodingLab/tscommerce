@@ -33,12 +33,23 @@ export const login = asyncHandler(async (req, res) => {
 });
 
 export const oauthSuccess = asyncHandler(async (req, res) => {
-  const authResult = req.user as any;
+  const { user, tokens } = req.user as any;
 
-  res.status(200).json({
-    user: true,
-    data: authResult,
+  res.cookie("refreshToken", tokens.refreshToken, {
+    httpOnly: true,
+    secure: false, //process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
   });
+
+  // res.status(200).json({
+  //   user: true,
+  //   data: authResult,
+  // });
+
+  res.redirect(
+    `http://localhost:3001/oauth-callback?token=${tokens.accessToken}`,
+  );
 });
 
 export const refreshToken = asyncHandler(async (req, res) => {

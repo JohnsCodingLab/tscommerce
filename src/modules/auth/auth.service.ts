@@ -63,7 +63,11 @@ export class AuthService {
     });
 
     if (existingOAuth) {
-      return this.issueTokens(existingOAuth.user.id, existingOAuth.user.role);
+      const tokens = await this.issueTokens(
+        existingOAuth.user.id,
+        existingOAuth.user.role,
+      );
+      return { user: this.sanitize(existingOAuth.user), tokens };
     }
 
     // 2️⃣ Check if user exists by email

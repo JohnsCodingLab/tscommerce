@@ -9,7 +9,7 @@ export const registry = new OpenAPIRegistry();
 export const getOpenApiDocumentation = () => {
   const generator = new OpenApiGeneratorV3(registry.definitions);
 
-  return generator.generateDocument({
+  const doc = generator.generateDocument({
     openapi: "3.0.3",
     info: {
       title: "TSCommerce API",
@@ -18,4 +18,17 @@ export const getOpenApiDocumentation = () => {
     },
     servers: [{ url: "/api/v1" }],
   });
+
+  doc.components = {
+    ...doc.components,
+    securitySchemes: {
+      bearerAuth: {
+        type: "http",
+        scheme: "bearer",
+        bearerFormat: "JWT",
+      },
+    },
+  };
+
+  return doc;
 };
