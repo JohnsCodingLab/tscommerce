@@ -31,3 +31,12 @@ export interface AuthResponseDTO {
 export interface TokenResponseDTO {
   accessToken: string;
 }
+
+export interface OAuthProfile {
+  provider: "google" | "github" | "discord" | "apple";
+  providerId: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  // avatarUrl?: string;
+}

@@ -11,23 +11,24 @@ import { AppError } from "#shared/utils/AppError.js";
 import authRouter from "#modules/auth/auth.route.js";
 import { env } from "#config/env.js";
 import morgan from "morgan";
+import passport from "#config/passport.js";
 
 const app = express(); // create an express app
 
+// MiddleWares
 if ((env.NODE_ENV = "development")) {
   app.use(morgan("dev"));
 }
-
-// MiddleWares
 app.use(helmet());
 app.use(
   cors({
     origin: "http://localhost:3001", // your frontend URL
     credentials: true,
-  })
+  }),
 );
 app.use(express.json());
 app.use(cookieParser());
+app.use(passport.initialize());
 
 //Swagger Documentation
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));

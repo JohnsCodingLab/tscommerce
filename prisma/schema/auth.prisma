@@ -5,21 +5,36 @@ enum UserRole {
 }
 
 model User {
-    id              String    @id @default(uuid())
+    id              String         @id @default(uuid())
     firstName       String
     lastName        String
-    email           String    @unique @db.Citext
+    email           String         @unique @db.Citext
     passwordHash    String
-    role            UserRole  @default(BUYER)
-    isActive        Boolean   @default(true)
-    isEmailVerified Boolean   @default(false)
+    oauthAccounts   OAuthAccount[]
+    role            UserRole       @default(BUYER)
+    isActive        Boolean        @default(true)
+    isEmailVerified Boolean        @default(false)
     lastLogin       DateTime?
-    createdAt       DateTime  @default(now())
-    updatedAt       DateTime  @updatedAt
+    createdAt       DateTime       @default(now())
+    updatedAt       DateTime       @updatedAt
 
     sellerProfile SellerProfile?
     stores        Store[] //One seller can have multiple physical stores
     refreshTokens RefreshToken[]
+}
+
+model OAuthAccount {
+    id              String   @id @default(uuid())
+    provider        String
+    providerId      String
+    userId          String
+    isEmailVerified Boolean  @default(false)
+    createdAt       DateTime @default(now())
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@unique([provider, providerId])
+    @@index([userId])
 }
 
 model RefreshToken {

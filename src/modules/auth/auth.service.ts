@@ -1,8 +1,16 @@
 import prisma from "#config/prisma.js";
 import { AppError } from "#shared/utils/AppError.js";
 import { logger } from "#shared/utils/Logger.js";
-import { comparePassword, hashPassword } from "#shared/utils/password.js";
-import type { AuthResponseDTO, UserResponseDTO } from "./auth.types.js";
+import {
+  comparePassword,
+  // generateUnusablePassword,
+  hashPassword,
+} from "#shared/utils/password.js";
+import type {
+  AuthResponseDTO,
+  OAuthProfile,
+  UserResponseDTO,
+} from "./auth.types.js";
 import type { LoginUserDTO, RegisterUserDTO } from "./auth.validator.js";
 import { TokenService } from "./token.service.js";
 
@@ -37,22 +45,74 @@ export class AuthService {
     };
   }
 
+  static async handleOAuthLogin(profile: OAuthProfile) {
+    const { provider, providerId, email, firstName, lastName } = profile;
+    if (!email) throw AppError.badRequest("Oauth  profile missing email");
+
+    if (!providerId) throw AppError.badRequest("Oauth  profile missing id");
+
+    // 1️⃣ Check existing OAuth account
+    const existingOAuth = await prisma.oAuthAccount.findUnique({
+      where: {
+        provider_providerId: {
+          provider,
+          providerId,
+        },
+      },
+      include: { user: true },
+    });
+
+    if (existingOAuth) {
+      return this.issueTokens(existingOAuth.user.id, existingOAuth.user.role);
+    }
+
+    // 2️⃣ Check if user exists by email
+    let user = await prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          email,
+          firstName: firstName ?? "User",
+          lastName: lastName ?? "Google",
+          passwordHash: "OAUTH_USER", // ✅ intentional
+          isEmailVerified: true,
+        },
+      });
+    }
+
+    // 3️⃣ Create OAuth link
+    await prisma.oAuthAccount.create({
+      data: {
+        provider,
+        providerId,
+        userId: user.id,
+      },
+    });
+
+    const tokens = await this.issueTokens(user.id, user.role);
+
+    return { user, tokens };
+  }
+
   //   Login
   static async login(
     data: LoginUserDTO,
-    meta?: { ipAddress?: string; userAgent?: string }
+    meta?: { ipAddress?: string; userAgent?: string },
   ): Promise<AuthResponseDTO> {
     const user = await prisma.user.findUnique({
       where: { email: data.email },
     });
 
     if (!user || !(await comparePassword(data.password, user.passwordHash))) {
-      logger.warn(`Login failed: User not found for email ${data.email}`);
+      logger.warn(
+        `Login failed: Incorrect Credentials User not found ${data.email}`,
+      );
       throw AppError.unauthorized("Invalid credentials");
     }
 
     if (!user.isActive) {
-      logger.warn(`Login failed: Incorrect password for UID ${user.id}`);
+      logger.warn(`User is not active ${user.id}`);
       throw AppError.forbidden("Account disabled");
     }
 
@@ -73,7 +133,7 @@ export class AuthService {
   //   Refresh Access Token
   static async refresh(
     refreshToken: string,
-    meta?: { ipAddress?: string; userAgent?: string }
+    meta?: { ipAddress?: string; userAgent?: string },
   ) {
     if (!refreshToken) {
       logger.warn(`No refresh  token provided`);
@@ -119,7 +179,7 @@ export class AuthService {
   private static async issueTokens(
     userId: string,
     role: string,
-    meta?: { ipAddress?: string; userAgent?: string }
+    meta?: { ipAddress?: string; userAgent?: string },
   ) {
     const accessToken = TokenService.generateAccessToken(userId, role);
     const { token, jti } = TokenService.generateRefreshToken(userId);

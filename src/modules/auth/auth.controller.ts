@@ -32,6 +32,15 @@ export const login = asyncHandler(async (req, res) => {
   });
 });
 
+export const oauthSuccess = asyncHandler(async (req, res) => {
+  const authResult = req.user as any;
+
+  res.status(200).json({
+    user: true,
+    data: authResult,
+  });
+});
+
 export const refreshToken = asyncHandler(async (req, res) => {
   const refreshToken = req.cookies?.refreshToken;
   const result = await AuthService.refresh(refreshToken, {

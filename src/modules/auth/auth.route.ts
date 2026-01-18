@@ -8,6 +8,7 @@ import {
 } from "./auth.validator.js";
 import { authRateLimiter } from "#shared/middlewares/rateLimiter.middleware.js";
 import { registry } from "#shared/docs/openapi.js";
+import passport from "passport";
 
 const router = Router();
 
@@ -39,7 +40,7 @@ router.post(
   "/register",
   authRateLimiter,
   validate(registerSchema),
-  AuthController.register
+  AuthController.register,
 );
 
 registry.registerPath({
@@ -67,7 +68,19 @@ router.post(
   "/login",
   authRateLimiter,
   validate(loginSchema),
-  AuthController.login
+  AuthController.login,
+);
+
+router.get("/google", passport.authenticate("google", { session: false }));
+
+// Google callback
+router.get(
+  "/google/callback",
+  passport.authenticate("google", {
+    session: false,
+    failureRedirect: "/login",
+  }),
+  AuthController.oauthSuccess,
 );
 
 // refresh token
@@ -94,7 +107,7 @@ registry.registerPath({
 router.post(
   "/refresh-token",
   validate(refreshSchema),
-  AuthController.refreshToken
+  AuthController.refreshToken,
 );
 
 // refresh token
