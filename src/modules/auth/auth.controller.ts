@@ -6,7 +6,19 @@ import { logger } from "#shared/utils/Logger.js";
 
 export const register = asyncHandler(async (req, res) => {
   const result = await AuthService.register(req.body as RegisterUserDTO);
-  res.status(201).json(result);
+
+  res.cookie("refreshToken", result.tokens.refreshToken, {
+    httpOnly: true,
+    secure: false, //process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+
+  res.status(201).json({
+    message: "Registration successful",
+    user: result.user,
+    accessToken: result.tokens.accessToken,
+  });
 });
 
 export const login = asyncHandler(async (req, res) => {
@@ -27,6 +39,7 @@ export const login = asyncHandler(async (req, res) => {
   });
 
   res.status(200).json({
+    message: "Login successful",
     user: result.user,
     accessToken: result.tokens.accessToken,
   });

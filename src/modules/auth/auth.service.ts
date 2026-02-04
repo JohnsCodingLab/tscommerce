@@ -3,7 +3,7 @@ import { AppError } from "#shared/utils/AppError.js";
 import { logger } from "#shared/utils/Logger.js";
 import {
   comparePassword,
-  // generateUnusablePassword,
+  generateUnusablePassword,
   hashPassword,
 } from "#shared/utils/password.js";
 import type {
@@ -41,11 +41,13 @@ export class AuthService {
 
     return {
       user: this.sanitize(user),
-      tokens,
+      tokens: tokens,
     };
   }
 
-  static async handleOAuthLogin(profile: OAuthProfile) {
+  static async handleOAuthLogin(
+    profile: OAuthProfile,
+  ): Promise<AuthResponseDTO> {
     const { provider, providerId, email, firstName, lastName } = profile;
     if (!email) throw AppError.badRequest("Oauth  profile missing email");
 
@@ -67,7 +69,7 @@ export class AuthService {
         existingOAuth.user.id,
         existingOAuth.user.role,
       );
-      return { user: this.sanitize(existingOAuth.user), tokens };
+      return { user: this.sanitize(existingOAuth.user), tokens: tokens };
     }
 
     // 2️⃣ Check if user exists by email
@@ -79,7 +81,7 @@ export class AuthService {
           email,
           firstName: firstName ?? "User",
           lastName: lastName ?? "Google",
-          passwordHash: "OAUTH_USER", // ✅ intentional
+          passwordHash: generateUnusablePassword(),
           isEmailVerified: true,
         },
       });
@@ -96,7 +98,7 @@ export class AuthService {
 
     const tokens = await this.issueTokens(user.id, user.role);
 
-    return { user, tokens };
+    return { user: this.sanitize(user), tokens: tokens };
   }
 
   //   Login
@@ -130,7 +132,7 @@ export class AuthService {
 
     return {
       user: this.sanitize(user),
-      tokens,
+      tokens: tokens,
     };
   }
 

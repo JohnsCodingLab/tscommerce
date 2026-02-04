@@ -16,7 +16,7 @@ import passport from "#config/passport.js";
 const app = express(); // create an express app
 
 // MiddleWares
-if ((env.NODE_ENV = "development")) {
+if (env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
 app.use(helmet());
